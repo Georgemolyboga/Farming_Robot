@@ -11,15 +11,15 @@
 
 ---
 
-## 1. Abstract & Scope
+## Abstract & Scope
 
 This project delivers an embedded dual motor control and real-time telemetry system for a differential-drive electric rover. Powered by an ARM Cortex-M microcontroller (STM32 Nucleo), the system independently regulates two DC gearmotors with quadrature encoder feedback, executes closed-loop speed control, displays real-time angular position and RPM metrics on an SPI graphical screen, and supports remote wireless operation over Bluetooth Low Energy (BLE).
 
 ---
 
-## 2. System Architecture & Hardware Setup
+## System Architecture & Hardware Setup
 
-### 2.1 Block Diagram
+### Block Diagram
 
 ```text
 +-----------------------------------------------------------------------------------+
@@ -53,19 +53,20 @@ This project delivers an embedded dual motor control and real-time telemetry sys
 
 ---
 
-## 3. Firmware Architecture & Algorithms
+## Firmware Architecture & Algorithms
 
-### 3.1 Kinematics & Telemetry Equations
+### Kinematics & Telemetry Equations
 
 Given decoded encoder resolution $N$ (counts per revolution):
 
-$$ \text{Relative Angle } (^{\circ}) = 360 \times \frac{\text{count} - \text{zero\_count}}{N} $$
+$$
+\text{Relative Angle}\ (^\circ) = 360 \times \frac{\text{count} - \text{count}_{\text{zero}}}{N}
+$$
 
-$$ \text{Speed } (\text{RPM}) = 60 \times \frac{\Delta\text{count}}{N \times \Delta t} $$
-
-*(Note: Equations updated to resolve mathematical environment display errors caused by unescaped underscores inside text blocks and unbracketed degree symbols)*
-
-### 3.2 Finite State Machine Diagram
+$$
+\text{Speed}\ (\text{RPM}) = 60 \times \frac{\Delta\text{count}}{N \times \Delta t}
+$$
+### Finite State Machine Diagram
 
 *(The associated C Code structures for telemetry and system state have been moved to Section 7.2)*
 
@@ -88,141 +89,17 @@ $$ \text{Speed } (\text{RPM}) = 60 \times \frac{\Delta\text{count}}{N \times \De
 
 ---
 
-## 4. Use Case Specifications
+## Use Case Specifications
 
-### 4.1 Use Case Diagram (PlantUML Format)
+### Use Case Diagram (PlantUML Format)
 
 *(Diagram syntax reworked from Mermaid into standard PlantUML to resolve unsupported actor mapping and parsing block errors)*
 
-```plantuml
-@startuml
-left to right direction
-
-actor "Rover Operator" as Operator
-actor "BLE Mobile App" as PhoneApp
-actor "Physical E-Stop Switch" as EStop
-
-package "STM32 Motor Control System" {
-  usecase "UC-1: Remote Drive Control" as UC1
-  usecase "UC-2: Closed-Loop Speed Control" as UC2
-  usecase "UC-3: Encoder Feedback & Position Tracking" as UC3
-  usecase "UC-4: Local Telemetry Display" as UC4
-  usecase "UC-5: Hardware Emergency Stop" as UC5
-  usecase "UC-6: Command Lease Timeout Protection" as UC6
-  usecase "UC-7: Physical Fallback Control Mode" as UC7
-}
-
-PhoneApp --> UC1
-Operator --> PhoneApp
-Operator --> EStop
-Operator --> UC7
-
-UC1 ..> UC2 : <<include>>
-UC2 ..> UC3 : <<include>>
-UC3 --> UC4
-EStop --> UC5
-UC6 ..> UC2 : <<forces stop>>
-@enduml
-```
-
-### 4.2 Detailed Use Case Specifications
-
-#### Code Schema Definition (YAML Format)
-
-```yaml
-use_cases:
-  - id: "UC-1"
-    name: "Remote Drive Control"
-    actor: "Phone BLE Application"
-    preconditions: "System in IDLE or RUN state; BLE connection established."
-    trigger: "Direction/speed command string received via BLE UART."
-    main_flow:
-      - "1. UART interrupt receives command packet and places payload into circular buffer."
-      - "2. Main loop parses packet format, checksum, and target values."
-      - "3. MCU updates Left/Right target RPMs and resets command lease timer."
-      - "4. State transitions to RUN."
-    exception_flow:
-      - "If packet is corrupt or out-of-range, discard packet, maintain current target, and log error."
-
-  - id: "UC-2"
-    name: "Closed-Loop Speed Control"
-    actor: "Internal 50 Hz Timer Interrupt"
-    preconditions: "System in RUN state; motor driver enabled."
-    trigger: "20 ms hardware timer interrupt fires."
-    main_flow:
-      - "1. Sample hardware encoder register counts for Left and Right wheels."
-      - "2. Calculate delta count over elapsed 20 ms window to derive measured RPM."
-      - "3. Compute speed error: e(t) = target_RPM - measured_RPM."
-      - "4. Execute PI algorithm with anti-windup clamping."
-      - "5. Output updated PWM duty cycles and direction pin signals."
-    exception_flow:
-      - "If control output exceeds saturation bounds, anti-windup accumulator clamp activates."
-
-  - id: "UC-3"
-    name: "Encoder Feedback & Position Tracking"
-    actor: "Quadrature Encoders"
-    preconditions: "Hardware timers configured in Encoder Mode (TIM2/TIM3)."
-    trigger: "Rotation of motor shafts."
-    main_flow:
-      - "1. Hardware encoder interfaces decode A/B phase shifts without CPU load."
-      - "2. Timer count registers increment or decrement dynamically."
-      - "3. Calculate relative angle modulo 360 degrees and track cumulative revolutions."
-    exception_flow:
-      - "16-bit hardware counter register overflow/underflow managed automatically."
-
-  - id: "UC-4"
-    name: "Local Telemetry Display"
-    actor: "SPI Display Controller"
-    preconditions: "SPI bus initialized; system active."
-    trigger: "Main loop execution tick (>= 10 Hz refresh rate)."
-    main_flow:
-      - "1. Read coherent snapshot of telemetry data (RPM, angle, state, data age)."
-      - "2. Render dual wheel circular gauges with direction pointers."
-      - "3. Display numerical speed values and communication status indicator."
-    exception_flow:
-      - "If display transmission stalls, execution continues without blocking 50 Hz control interrupt."
-
-  - id: "UC-5"
-    name: "Hardware Emergency Stop"
-    actor: "Physical E-Stop Switch / Operator"
-    preconditions: "Rover system powered."
-    trigger: "Operator toggles physical E-Stop switch."
-    main_flow:
-      - "1. Hardware line directly disables H-Bridge driver outputs in < 100 ms."
-      - "2. EXTI line signals MCU interrupt; system state jumps to FAULT."
-      - "3. PWM generators forced to 0% duty cycle."
-    exception_flow:
-      - "Releasing E-stop switch alone will not resume movement; requires full hardware/software reset."
-
-  - id: "UC-6"
-    name: "Command Lease Timeout Protection"
-    actor: "Internal Watchdog / Lease Timer"
-    preconditions: "System running in RUN state."
-    trigger: "Time since last valid BLE command exceeds 2.0 seconds."
-    main_flow:
-      - "1. MCU clears target RPM setpoints to 0."
-      - "2. State transitions to STOPPING, waiting for speed to drop < 3 RPM."
-      - "3. Transitions to IDLE/FAULT; driver outputs disabled."
-    exception_flow:
-      - "Re-establishing BLE connection alone does not resume motion; fresh RUN command required."
-
-  - id: "UC-7"
-    name: "Physical Fallback Control Mode"
-    actor: "Rover Operator"
-    preconditions: "BLE connection offline; Fallback mode active (Supervisor approved)."
-    trigger: "Operator adjusts onboard speed/direction controls."
-    main_flow:
-      - "1. MCU samples onboard potentiometers (ADC) / directional switches."
-      - "2. Sets target RPM values within 100 ms of input adjustment."
-      - "3. Standard closed-loop speed regulation applies."
-    exception_flow:
-      - "If analog sensor reading is out of range, set target speed to zero."
-```
 
 #### Specification Summary Matrix
 
 | UC ID | Name | Primary Actor | Trigger | Core Metric / Target | Primary Fallback |
-|---|---|---|---|---|---|
+|-----|---|---|---|---|---|
 | **UC-1** | Remote Drive Control | Phone BLE App | BLE Packet Received | Response time $< 1.0\text{ s}$ | Discard malformed packet |
 | **UC-2** | Closed-Loop Speed Control | 50 Hz Interrupt | 20 ms Timer Expiry | Execution period $20\text{ ms} \pm 2\text{ ms}$ | Anti-windup clamping |
 | **UC-3** | Encoder Feedback & Angle | Encoders | Shaft Rotation | Count accuracy $\pm 2\%$ | Hardware 16-bit auto-wrap |
@@ -233,7 +110,7 @@ use_cases:
 
 ---
 
-## 5. Acceptance Test Protocols (M1–M10)
+## Acceptance Test Protocols (M1–M10)
 
 | Requirement ID | Module / Feature | Acceptance Criteria & Test Procedure | Verification Target / Metric | Responsible Role |
 |---|---|---|---|---|
@@ -250,7 +127,7 @@ use_cases:
 
 ---
 
-## 6. Work Breakdown & 12-Week Plan
+## Work Breakdown & 12-Week Plan
 
 ```text
 Week  1  2  3  4  5  6  7  8  9 10 11 12
@@ -266,9 +143,9 @@ M6    .  .  .  .  .  .  .  .  .  .  . [*]   Final Documentation & Presentation
 
 ---
 
-## 7. C Code Headers & Structures
+## C Code Headers & Structures
 
-### 7.1 Microcontroller Pinout & Peripheral Mapping (C Code Header)
+### Microcontroller Pinout & Peripheral Mapping (C Code Header)
 
 ```c
 /**
@@ -319,7 +196,7 @@ M6    .  .  .  .  .  .  .  .  .  .  . [*]   Final Documentation & Presentation
 #endif /* HARDWARE_CONFIG_H */
 ```
 
-### 7.2 Finite State Machine (C Code Structure)
+### Finite State Machine (C Code Structure)
 
 ```c
 typedef enum {

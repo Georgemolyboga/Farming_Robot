@@ -1,0 +1,29 @@
+@startuml
+skinparam backgroundColor white
+left to right direction
+
+actor "Rover Operator" as Operator
+actor "BLE Mobile App" as PhoneApp
+actor "Physical E-Stop Switch" as EStop
+
+package "STM32 Motor Control System" {
+  usecase "UC-1: Remote Drive Control" as UC1
+  usecase "UC-2: Closed-Loop Speed Control" as UC2
+  usecase "UC-3: Encoder Feedback & Position Tracking" as UC3
+  usecase "UC-4: Local Telemetry Display" as UC4
+  usecase "UC-5: Hardware Emergency Stop" as UC5
+  usecase "UC-6: Command Lease Timeout Protection" as UC6
+  usecase "UC-7: Physical Fallback Control Mode" as UC7
+}
+
+PhoneApp --> UC1
+Operator --> PhoneApp
+Operator --> EStop
+Operator --> UC7
+
+UC1 ..> UC2 : <<include>>
+UC2 ..> UC3 : <<include>>
+UC3 --> UC4
+EStop --> UC5
+UC6 ..> UC2 : <<forces stop>>
+@enduml
