@@ -1,0 +1,79 @@
+# ==========================================
+# C / C++
+# ==========================================
+# Object and dependency files
+*.o
+*.obj
+*.d
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Libraries and executables
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# Build outputs & CMake files
+build/
+bin/
+out/
+cmake-build-*/
+.cmake/
+CMakeCache.txt
+CMakeFiles/
+
+# ==========================================
+# Java
+# ==========================================
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Archives & Packages
+*.jar
+*.war
+*.ear
+*.nar
+
+# Build tools (Maven & Gradle)
+target/
+.gradle/
+build/
+.m2/
+
+# ==========================================
+# IDEs & Editor Configuration
+# ==========================================
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosv
+
+# IntelliJ IDEA / JetBrains
+.idea/
+*.iml
+*.iws
+
+# Eclipse
+.metadata
+.classpath
+.project
+.settings/
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+Thumbs.db

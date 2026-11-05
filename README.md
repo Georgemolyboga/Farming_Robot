@@ -49,57 +49,7 @@ This project delivers an embedded dual motor control and real-time telemetry sys
 |                                               +----------+                        |
 +-----------------------------------------------------------------------------------+
 ```
-
-### 2.2 Microcontroller Pinout & Peripheral Mapping (C Code Header)
-
-```c
-/**
- * @file hardware_config.h
- * @brief Peripheral allocation & pin mappings for STM32F411RE Nucleo
- */
-
-#ifndef HARDWARE_CONFIG_H
-#define HARDWARE_CONFIG_H
-
-#include "stm32f4xx_hal.h"
-
-/* --- Quadrature Encoders --- */
-#define TIM_ENCODER_LEFT           TIM2
-#define PIN_ENC_L_A                GPIO_PIN_0    /* PA0 - TIM2_CH1 */
-#define PIN_ENC_L_B                GPIO_PIN_1    /* PA1 - TIM2_CH2 */
-
-#define TIM_ENCODER_RIGHT          TIM3
-#define PIN_ENC_R_A                GPIO_PIN_6    /* PA6 - TIM3_CH1 */
-#define PIN_ENC_R_B                GPIO_PIN_7    /* PA7 - TIM3_CH2 */
-
-/* --- Motor Driver (PWM & Direction) --- */
-#define TIM_PWM_MOTORS             TIM4
-#define PIN_PWM_LEFT               GPIO_PIN_8    /* PB8 - TIM4_CH3 */
-#define PIN_PWM_RIGHT              GPIO_PIN_9    /* PB9 - TIM4_CH4 */
-
-#define PORT_MOTOR_DIR             GPIOB
-#define PIN_DIR_LEFT               GPIO_PIN_4    /* PB4 - Output */
-#define PIN_DIR_RIGHT              GPIO_PIN_5    /* PB5 - Output */
-
-/* --- Hardware Safety / E-Stop --- */
-#define PORT_ESTOP                 GPIOC
-#define PIN_HARDWARE_ESTOP         GPIO_PIN_13   /* PC13 - EXTI Interrupt */
-#define PIN_DRIVER_DISABLE         GPIO_PIN_10   /* PB10 - Direct Hardware Disable Output */
-
-/* --- Communication & Display --- */
-#define USART_BLE                  USART2        /* PA2 (TX), PA3 (RX) */
-#define SPI_DISPLAY                SPI1          /* PA5 (SCK), PA7 (MOSI) */
-#define PIN_DISPLAY_CS             GPIO_PIN_6    /* PB6 - Chip Select */
-#define PIN_DISPLAY_DC             GPIO_PIN_7    /* PC7 - Data/Command */
-
-/* --- Control Constants --- */
-#define CONTROL_LOOP_FREQ_HZ       50
-#define CONTROL_LOOP_PERIOD_MS     20
-#define COMMAND_LEASE_TIMEOUT_MS   2000
-#define WATCHDOG_TIMEOUT_MS        500
-
-#endif /* HARDWARE_CONFIG_H */
-```
+*(The microcontroller pinout and peripheral mapping C Code Header has been moved to Section 7.1)*
 
 ---
 
@@ -109,32 +59,15 @@ This project delivers an embedded dual motor control and real-time telemetry sys
 
 Given decoded encoder resolution $N$ (counts per revolution):
 
-$$\text{Relative Angle } (^\circ) = 360 \times \frac{\text{count} - \text{zero\_count}}{N}$$
+$$ \text{Relative Angle } (^{\circ}) = 360 \times \frac{\text{count} - \text{zero\_count}}{N} $$
 
-$$\text{Speed } (\text{RPM}) = 60 \times \frac{\Delta\text{count}}{N \times \Delta t}$$
+$$ \text{Speed } (\text{RPM}) = 60 \times \frac{\Delta\text{count}}{N \times \Delta t} $$
 
-### 3.2 Finite State Machine (C Code Structure)
+*(Note: Equations updated to resolve mathematical environment display errors caused by unescaped underscores inside text blocks and unbracketed degree symbols)*
 
-```c
-typedef enum {
-    STATE_INIT = 0,
-    STATE_IDLE,
-    STATE_RUN,
-    STATE_STOPPING,
-    STATE_FAULT
-} SystemState_t;
+### 3.2 Finite State Machine Diagram
 
-typedef struct {
-    float target_rpm_l;
-    float target_rpm_r;
-    float measured_rpm_l;
-    float measured_rpm_r;
-    int32_t encoder_count_l;
-    int32_t encoder_count_r;
-    uint32_t last_command_timestamp;
-    SystemState_t state;
-} RoverTelemetry_t;
-```
+*(The associated C Code structures for telemetry and system state have been moved to Section 7.2)*
 
 ```text
        +--------------+
@@ -157,34 +90,39 @@ typedef struct {
 
 ## 4. Use Case Specifications
 
-### 4.1 Use Case Diagram (Mermaid)
+### 4.1 Use Case Diagram (PlantUML Format)
 
-```mermaid
-flowchart TD
-    actor Operator as "Rover Operator"
-    actor PhoneApp as "BLE Mobile App"
-    actor EStop as "Physical E-Stop Switch"
+*(Diagram syntax reworked from Mermaid into standard PlantUML to resolve unsupported actor mapping and parsing block errors)*
 
-    subgraph STM32 Motor Control System
-        UC1("UC-1: Remote Drive Control")
-        UC2("UC-2: Closed-Loop Speed Control")
-        UC3("UC-3: Encoder Feedback & Position Tracking")
-        UC4("UC-4: Local Telemetry Display")
-        UC5("UC-5: Hardware Emergency Stop")
-        UC6("UC-6: Command Lease Timeout Protection")
-        UC7("UC-7: Physical Fallback Control Mode")
-    end
+```plantuml
+@startuml
+left to right direction
 
-    PhoneApp --> UC1
-    Operator --> PhoneApp
-    Operator --> EStop
-    Operator --> UC7
+actor "Rover Operator" as Operator
+actor "BLE Mobile App" as PhoneApp
+actor "Physical E-Stop Switch" as EStop
 
-    UC1 ..> UC2 : <<include>>
-    UC2 ..> UC3 : <<include>>
-    UC3 --> UC4
-    EStop --> UC5
-    UC6 ..> UC2 : <<forces stop>>
+package "STM32 Motor Control System" {
+  usecase "UC-1: Remote Drive Control" as UC1
+  usecase "UC-2: Closed-Loop Speed Control" as UC2
+  usecase "UC-3: Encoder Feedback & Position Tracking" as UC3
+  usecase "UC-4: Local Telemetry Display" as UC4
+  usecase "UC-5: Hardware Emergency Stop" as UC5
+  usecase "UC-6: Command Lease Timeout Protection" as UC6
+  usecase "UC-7: Physical Fallback Control Mode" as UC7
+}
+
+PhoneApp --> UC1
+Operator --> PhoneApp
+Operator --> EStop
+Operator --> UC7
+
+UC1 ..> UC2 : <<include>>
+UC2 ..> UC3 : <<include>>
+UC3 --> UC4
+EStop --> UC5
+UC6 ..> UC2 : <<forces stop>>
+@enduml
 ```
 
 ### 4.2 Detailed Use Case Specifications
@@ -324,4 +262,82 @@ M3    .  .  .  .  . [*]  .  .  .  .  .  .   Dual Closed Loop & SPI Display Integ
 M4    .  .  .  .  .  .  . [*]  .  .  .  .   Full Rover System Integration Complete
 M5    .  .  .  .  .  .  .  .  . [*]  .  .   Acceptance Tests M1-M10 Passed
 M6    .  .  .  .  .  .  .  .  .  .  . [*]   Final Documentation & Presentation
+```
+
+---
+
+## 7. C Code Headers & Structures
+
+### 7.1 Microcontroller Pinout & Peripheral Mapping (C Code Header)
+
+```c
+/**
+ * @file hardware_config.h
+ * @brief Peripheral allocation & pin mappings for STM32F411RE Nucleo
+ */
+
+#ifndef HARDWARE_CONFIG_H
+#define HARDWARE_CONFIG_H
+
+#include "stm32f4xx_hal.h"
+
+/* --- Quadrature Encoders --- */
+#define TIM_ENCODER_LEFT           TIM2
+#define PIN_ENC_L_A                GPIO_PIN_0    /* PA0 - TIM2_CH1 */
+#define PIN_ENC_L_B                GPIO_PIN_1    /* PA1 - TIM2_CH2 */
+
+#define TIM_ENCODER_RIGHT          TIM3
+#define PIN_ENC_R_A                GPIO_PIN_6    /* PA6 - TIM3_CH1 */
+#define PIN_ENC_R_B                GPIO_PIN_7    /* PA7 - TIM3_CH2 */
+
+/* --- Motor Driver (PWM & Direction) --- */
+#define TIM_PWM_MOTORS             TIM4
+#define PIN_PWM_LEFT               GPIO_PIN_8    /* PB8 - TIM4_CH3 */
+#define PIN_PWM_RIGHT              GPIO_PIN_9    /* PB9 - TIM4_CH4 */
+
+#define PORT_MOTOR_DIR             GPIOB
+#define PIN_DIR_LEFT               GPIO_PIN_4    /* PB4 - Output */
+#define PIN_DIR_RIGHT              GPIO_PIN_5    /* PB5 - Output */
+
+/* --- Hardware Safety / E-Stop --- */
+#define PORT_ESTOP                 GPIOC
+#define PIN_HARDWARE_ESTOP         GPIO_PIN_13   /* PC13 - EXTI Interrupt */
+#define PIN_DRIVER_DISABLE         GPIO_PIN_10   /* PB10 - Direct Hardware Disable Output */
+
+/* --- Communication & Display --- */
+#define USART_BLE                  USART2        /* PA2 (TX), PA3 (RX) */
+#define SPI_DISPLAY                SPI1          /* PA5 (SCK), PA7 (MOSI) */
+#define PIN_DISPLAY_CS             GPIO_PIN_6    /* PB6 - Chip Select */
+#define PIN_DISPLAY_DC             GPIO_PIN_7    /* PC7 - Data/Command */
+
+/* --- Control Constants --- */
+#define CONTROL_LOOP_FREQ_HZ       50
+#define CONTROL_LOOP_PERIOD_MS     20
+#define COMMAND_LEASE_TIMEOUT_MS   2000
+#define WATCHDOG_TIMEOUT_MS        500
+
+#endif /* HARDWARE_CONFIG_H */
+```
+
+### 7.2 Finite State Machine (C Code Structure)
+
+```c
+typedef enum {
+    STATE_INIT = 0,
+    STATE_IDLE,
+    STATE_RUN,
+    STATE_STOPPING,
+    STATE_FAULT
+} SystemState_t;
+
+typedef struct {
+    float target_rpm_l;
+    float target_rpm_r;
+    float measured_rpm_l;
+    float measured_rpm_r;
+    int32_t encoder_count_l;
+    int32_t encoder_count_r;
+    uint32_t last_command_timestamp;
+    SystemState_t state;
+} RoverTelemetry_t;
 ```
