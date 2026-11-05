@@ -93,7 +93,7 @@ $$
 
 ### Use Case Diagram (PlantUML Format)
 
-*(Diagram syntax reworked from Mermaid into standard PlantUML to resolve unsupported actor mapping and parsing block errors)*
+![Use Case Diagram](https://raw.githubusercontent.com/Georgemolyboga/Farming_Robot/refs/heads/main/docs/uc_diagram1.puml)
 
 
 #### Specification Summary Matrix
