@@ -93,7 +93,7 @@ $$
 
 ### Use Case Diagram (PlantUML Format)
 
-![Use Case Diagram](https://raw.githubusercontent.com/Georgemolyboga/Farming_Robot/refs/heads/main/docs/uc_diagram1.puml)
+![Use Case Diagram](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Georgemolyboga/Farming_Robot/main/docs/uc_diagram1.puml)
 
 
 #### Specification Summary Matrix
