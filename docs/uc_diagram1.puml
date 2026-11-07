@@ -6,9 +6,9 @@ actor "Rover Operator" as Operator
 actor "BLE Mobile App" as PhoneApp
 actor "Physical E-Stop Switch" as EStop
 
-package "STM32 Motor Control System" {
+package "STM32 Quad-Motor Control Subsystem" {
   usecase "UC-1: Remote Drive Control" as UC1
-  usecase "UC-2: Closed-Loop Speed Control" as UC2
+  usecase "UC-2: Quad-Motor Velocity Control" as UC2
   usecase "UC-3: Encoder Feedback & Position Tracking" as UC3
   usecase "UC-4: Local Telemetry Display" as UC4
   usecase "UC-5: Hardware Emergency Stop" as UC5
