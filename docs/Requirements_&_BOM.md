@@ -75,7 +75,8 @@
 | **Hardware E-Stop (NEW)** | NC mushroom E-stop (16/22 mm, twist-release) | Normally-closed contact in series with the driver Enable/STBY (pull-down to GND) | Fail-safe default-off disable that also reports its state to the MCU | Fail-safe by design and matches the proposal's "hardware holds the driver off" rule. Slightly larger and costs a few euros. |
 
 ### CJ1 fit summary (AI generated and to be discussed)
-- **Board:** C562RE remains the best fit (named in the proposal, cheap, 5 encoder-capable timers, general-purpose interfaces, CAN if needed).
+- **Board:** C562RE remains the selected board, with hardware encoder interfaces, SPI DMA for the display, UART for BLE, and CAN if needed.
 - **Motors:** FIT0450 or a 6 V JGB37-520 fit the €60 budget. The Pololu 25D is over budget. The NEMA 17 does not fit.
 - **Driver:** TB6612FNG or DRV8833 for stalls up to ~1.5–2 A. MC33926 if you want to survive 2.8 A stall and get dedicated disable pins. Avoid the L298N (voltage drop) and the MDD10A (no enable pin, no reverse protection).
-- **BLE:** RN4870/71 (via breakout) or Bluefruit UART Friend. Prove the real phone app in week 4 either way.
+- **BLE:** The selected option is the DSD TECH HM-10 documented in [bluetooth/purchase_link.txt](bluetooth/purchase_link.txt), using UART to the C562RE and BLE to an iPhone-native app. If looking for alternatives, avoid ambiguous listings that mix HM-10/BLE with ZS-040 or HC-05/HC-06, since they won't connect to a cellphone. Adafruit Bluefruit LE UART Friend is the less-preferred but possible alternative.
+- **Display:** The selected option is an ST7789-based IPS SPI display, using [Floyd-Fish/ST7789-STM32](https://github.com/Floyd-Fish/ST7789-STM32) as the driver starting point, as recorded in [display/README.txt](display/README.txt). Adapt the STM32 HAL calls to C5 HAL2 and use partial redraws and SPI DMA to target high-speed screen updates without blocking the 20 ms motor control tasks. The driver's existing DMA needs some adaptation to optimize our performance further. A possible alternative is the ILI9341 with optional touchscreen [ardnew/ILI9341-STM32-HAL](https://github.com/ardnew/ILI9341-STM32-HAL).
