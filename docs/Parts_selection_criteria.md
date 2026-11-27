@@ -7,7 +7,7 @@ Selecting the appropriate DC geared motors and H-bridge motor drivers for a four
 ### 1.1 No-Load Speed (The 70% Rule)
 
 * **Requirement (`FR-1`):** Maximum target wheel speed is assumed to be **90 RPM**.
-* To ensure the PI controller retains sufficient headroom to regulate speed without saturating the PWM duty cycle, the 90 RPM target should be roughly **70% or less** of the motor's no-load RPM at your actual battery pack voltage. (Meaning an actual RPM of >~130–160 RPM is ideal.)
+* To ensure the PI controller retains sufficient headroom to regulate speed without saturating the PWM duty cycle, the 90 RPM target should be roughly **70% or less** of the motor's no-load RPM at your actual battery pack voltage. (Meaning an actual RPM of >~120–160 RPM is ideal.)
 
 ### 1.2 Encoder Resolution ($N$ Counts per Wheel Spin)
 
